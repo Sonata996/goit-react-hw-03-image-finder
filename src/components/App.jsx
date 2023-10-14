@@ -24,7 +24,6 @@ onInputValue = (value) =>{
     return alert('The result has already been found')
     }
 this.setState({
-  loading: true,
   query: value
 })
 
@@ -34,46 +33,38 @@ this.setState({ page: this.state.page + 1})
 }
 
 
-componentDidUpdate(prevProps, prevState){
-    if ( prevState.query !== this.state.query || prevState.page !== this.state.page) {
-      if (this.state.page === 1 || prevState.query !== this.state.query) {
+async componentDidUpdate(prevProps, prevState){
+  if (prevState.query !== this.state.query) {
+    this.setState({
+      images:[],
+      page: 1
+    })
+  }
 
-        serviceAPI(this.state.query, this.state.page)
-    .then(data => {
-      console.log(data);
+    if ( this.state.query !== prevState.query || prevState.page !== this.state.page) {
       this.setState({
-        page: 1,
-        images: data.data.hits,
-        loading: false,
-        loadMore: this.state.page < Math.ceil(data.data.totalHits / 12 )
+        loading: true,
       })
 
-    }).catch(err =>{
-        console.log(err);
-    })
-
-      } else{
-        serviceAPI(this.state.query, this.state.page)
-        .then(data =>{
-          this.setState(prevState => ({
-            images: [...prevState.images, ...data.data.hits],
-            loading: false,
-            loadMore: this.state.page < Math.ceil(data.data.totalHits / 12 )
+      try{
+       const servic = await serviceAPI(this.state.query, this.state.page)
+       this.setState(prevState => ({
+            images: this.state.page === 1 ? servic.data.hits : [...prevState.images, ...servic.data.hits],
+            loadMore: this.state.page < Math.ceil(servic.data.totalHits / 12 )
           }))
-          console.log(this.state.page < Math.ceil(data.data.totalHits / 12 ))
-        })
-        .catch(err =>{
-          console.log(err);
-        })
+      } catch{
+        console.log();
+      } finally{
+        this.setState({
+              loading: false,
+            })
       }
-    
     }
 }
 
 
 render(){
   const listImg = this.state.images
-  console.log(this.state.loadMore);
   return (
     <div>
       <Searchbar 
